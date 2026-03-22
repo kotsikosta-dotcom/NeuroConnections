@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neuro Connections</title>
+  <style>
+    :root {
+      --bg: #f7f6f3;
+      --card: #ffffff;
+      --tile: #efede8;
+      --tile-hover: #e3dfd8;
+      --tile-selected: #5b5b5b;
+      --tile-selected-text: #ffffff;
+      --text: #222222;
+      --muted: #666666;
+      --yellow: #f9df6d;
+      --green: #a8d08d;
+      --blue: #9fc5e8;
+      --purple: #c9b6e4;
+      --shadow: 0 10px 24px rgba(0,0,0,0.08);
+      --danger: #b42318;
+      --success: #177245;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 24px;
+      position: relative;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      margin-bottom: 20px;
+      line-height: 1.45;
+    }
+
+    .status-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .status-pill {
+      background: #f1f1f1;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .message {
+      min-height: 24px;
+      text-align: center;
+      font-size: 0.96rem;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .message.good {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .message.bad {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .solved-area {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .solved-group {
+      border-radius: 16px;
+      padding: 16px;
+      color: #1f1f1f;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: revealSolved 0.35s ease forwards;
+    }
+
+    @keyframes revealSolved {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .solved-desc {
+      font-weight: 800;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      font-size: 0.95rem;
+    }
+
+    .solved-words {
+      font-size: 0.96rem;
+      line-height: 1.5;
+      font-weight: 600;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .tile {
+      min-height: 82px;
+      border: none;
+      border-radius: 16px;
+      background: var(--tile);
+      color: var(--text);
+      font-weight: 800;
+      font-size: 1rem;
+      padding: 12px;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.15s ease;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .tile:hover {
+      background: var(--tile-hover);
+    }
+
+    .tile:active {
+      transform: scale(0.98);
+    }
+
+    .tile.selected {
+      background: var(--tile-selected);
+      color: var(--tile-selected-text);
+    }
+
+    .tile.pop-one-away {
+      animation: popOneAway 0.4s ease;
+    }
+
+    .tile.shake {
+      animation: shake 0.35s ease;
+    }
+
+    @keyframes popOneAway {
+      0% { transform: scale(1); }
+      35% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+      100% { transform: translateX(0); }
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button.control-btn {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      background: #dddddd;
+      transition: background 0.15s ease, transform 0.08s ease;
+    }
+
+    button.control-btn:hover {
+      background: #cfcfcf;
+    }
+
+    button.control-btn:active {
+      transform: scale(0.98);
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .mistakes-dots {
+      display: inline-flex;
+      gap: 6px;
+      vertical-align: middle;
+      margin-left: 6px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: #222;
+      opacity: 0.18;
+    }
+
+    .dot.on {
+      opacity: 1;
+    }
+
+    .win-banner {
+      display: none;
+      margin-top: 16px;
+      text-align: center;
+      font-weight: 800;
+      color: var(--success);
+      font-size: 1.05rem;
+    }
+
+    .win-banner.show {
+      display: block;
+    }
+
+    .one-away-badge {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-12px);
+      background: #222;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 999;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .one-away-badge.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 760px) {
+      .board {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .tile {
+        min-height: 74px;
+        font-size: 0.92rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="one-away-badge" id="oneAwayBadge">One away…</div>
+
+  <div class="app">
+    <div class="card">
+      <h1>Neuro Connections</h1>
+      <div class="subtitle">
+        Find the four groups of four connected neuroanatomy terms.
+      </div>
+
+      <div class="status-bar">
+        <div class="status-pill">
+          Mistakes remaining:
+          <span class="mistakes-dots" id="mistakesDots"></span>
+        </div>
+        <div class="status-pill" id="solvedCount">Solved: 0 / 4</div>
+      </div>
+
+      <div class="message" id="message">Select four tiles, then press Submit.</div>
+
+      <div class="solved-area" id="solvedArea"></div>
+
+      <div class="board" id="board"></div>
+
+      <div class="controls">
+        <button class="control-btn" id="shuffleBtn">Shuffle</button>
+        <button class="control-btn" id="clearBtn">Clear</button>
+        <button class="control-btn" id="submitBtn">Submit</button>
+        <button class="control-btn" id="resetBtn">Reset Game</button>
+      </div>
+
+      <div class="win-banner" id="winBanner">Perfect — all four groups solved.</div>
+
+      <div class="footer-note">Custom anatomy Connections game</div>
+    </div>
+  </div>
+
+  <script>
+    const GROUPS = [
+      {
+        id: "yellow",
+        order: 1,
+        description: "Spinal cord tracts",
+        color: "var(--yellow)",
+        words: ["Corticospinal", "Spinothalamic", "Gracile", "Vestibulospinal"]
+      },
+      {
+        id: "green",
+        order: 2,
+        description: "Structures related to the cavernous sinus",
+        color: "var(--green)",
+        words: ["Abducens", "Trochlear", "Internal Carotid", "Ophthalmic"]
+      },
+      {
+        id: "blue",
+        order: 3,
+        description: "Cranial nerves with parasympathetic function",
+        color: "var(--blue)",
+        words: ["Oculomotor", "Facial", "Glossopharyngeal", "Vagus"]
+      },
+      {
+        id: "purple",
+        order: 4,
+        description: "Non-gyrus parts of cortex",
+        color: "var(--purple)",
+        words: ["Cuneus", "Paracentral", "Precuneus", "Uncus"]
+      }
+    ];
+
+    const MAX_MISTAKES = 4;
+
+    let tiles = [];
+    let selected = new Set();
+    let solvedGroups = [];
+    let mistakesRemaining = MAX_MISTAKES;
+
+    const boardEl = document.getElementById("board");
+    const solvedAreaEl = document.getElementById("solvedArea");
+    const messageEl = document.getElementById("message");
+    const solvedCountEl = document.getElementById("solvedCount");
+    const mistakesDotsEl = document.getElementById("mistakesDots");
+    const winBannerEl = document.getElementById("winBanner");
+    const oneAwayBadgeEl = document.getElementById("oneAwayBadge");
+
+    const shuffleBtn = document.getElementById("shuffleBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    function buildTiles() {
+      tiles = GROUPS.flatMap(group =>
+        group.words.map(word => ({
+          word,
+          groupId: group.id
+        }))
+      );
+      shuffleArray(tiles);
+    }
+
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    function setMessage(text, type = "") {
+      messageEl.textContent = text;
+      messageEl.className = "message";
+      if (type) {
+        messageEl.classList.add(type);
+      }
+    }
+
+    function renderMistakes() {
+      mistakesDotsEl.innerHTML = "";
+      for (let i = 0; i < MAX_MISTAKES; i++) {
+        const dot = document.createElement("span");
+        dot.className = "dot" + (i < mistakesRemaining ? " on" : "");
+        mistakesDotsEl.appendChild(dot);
+      }
+    }
+
+    function renderSolvedCount() {
+      solvedCountEl.textContent = `Solved: ${solvedGroups.length} / 4`;
+    }
+
+    function renderSolvedGroups() {
+      solvedAreaEl.innerHTML = "";
+
+      const orderedSolved = [...solvedGroups].sort((a, b) => a.order - b.order);
+
+      orderedSolved.forEach(group => {
+        const div = document.createElement("div");
+        div.className = "solved-group";
+        div.style.background = group.color;
+
+        div.innerHTML = `
+          <div class="solved-desc">${group.description}</div>
+          <div class="solved-words">${group.words.join(" · ")}</div>
+        `;
+
+        solvedAreaEl.appendChild(div);
+      });
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = "";
+
+      const unsolvedTiles = tiles.filter(tile => !solvedGroups.some(g => g.id === tile.groupId));
+
+      unsolvedTiles.forEach(tile => {
+        const btn = document.createElement("button");
+        btn.className = "tile";
+        btn.textContent = tile.word;
+        btn.dataset.word = tile.word;
+
+        if (selected.has(tile.word)) {
+          btn.classList.add("selected");
+        }
+
+        btn.addEventListener("click", () => toggleSelect(tile.word));
+        boardEl.appendChild(btn);
+      });
+    }
+
+    function toggleSelect(word) {
+      if (selected.has(word)) {
+        selected.delete(word);
+      } else {
+        if (selected.size >= 4) {
+          setMessage("You can only select four tiles at a time.", "bad");
+          return;
+        }
+        selected.add(word);
+      }
+      renderBoard();
+    }
+
+    function clearSelection() {
+      selected.clear();
+      renderBoard();
+      setMessage("Selection cleared.");
+    }
+
+    function shuffleBoard() {
+      const unsolved = tiles.filter(tile => !solvedGroups.some(g => g.id === tile.groupId));
+      const solved = tiles.filter(tile => solvedGroups.some(g => g.id === tile.groupId));
+      shuffleArray(unsolved);
+      tiles = [...solved, ...unsolved];
+      renderBoard();
+      setMessage("Board shuffled.");
+    }
+
+    function getSelectedTileElements() {
+      return [...boardEl.querySelectorAll(".tile.selected")];
+    }
+
+    function animateOneAway() {
+      const selectedEls = getSelectedTileElements();
+      selectedEls.forEach(el => {
+        el.classList.remove("pop-one-away");
+        void el.offsetWidth;
+        el.classList.add("pop-one-away");
+      });
+
+      oneAwayBadgeEl.classList.add("show");
+      setTimeout(() => {
+        oneAwayBadgeEl.classList.remove("show");
+      }, 1100);
+    }
+
+    function animateShakeSelected() {
+      const selectedEls = getSelectedTileElements();
+      selectedEls.forEach(el => {
+        el.classList.remove("shake");
+        void el.offsetWidth;
+        el.classList.add("shake");
+      });
+    }
+
+    function submitSelection() {
+      if (selected.size !== 4) {
+        setMessage("Select exactly four tiles first.", "bad");
+        return;
+      }
+
+      const selectedWords = [...selected];
+      const matchingGroup = GROUPS.find(group => {
+        return group.words.every(word => selectedWords.includes(word));
+      });
+
+      if (matchingGroup) {
+        if (!solvedGroups.some(g => g.id === matchingGroup.id)) {
+          solvedGroups.push(matchingGroup);
+          selected.clear();
+          renderSolvedGroups();
+          renderSolvedCount();
+          renderBoard();
+          setMessage(`Correct: ${matchingGroup.description}`, "good");
+        }
+
+        if (solvedGroups.length === GROUPS.length) {
+          winBannerEl.classList.add("show");
+          setMessage("You solved all four categories.", "good");
+        }
+
+        return;
+      }
+
+      const nearMiss = isOneAway(selectedWords);
+
+      mistakesRemaining--;
+      renderMistakes();
+
+      if (mistakesRemaining <= 0) {
+        revealAll();
+        setMessage("No mistakes remaining. Game over.", "bad");
+        return;
+      }
+
+      if (nearMiss) {
+        animateOneAway();
+        setMessage("One away...", "bad");
+      } else {
+        animateShakeSelected();
+        setMessage("Not a correct group.", "bad");
+      }
+    }
+
+    function isOneAway(selectedWords) {
+      return GROUPS.some(group => {
+        const overlap = group.words.filter(word => selectedWords.includes(word)).length;
+        return overlap === 3;
+      });
+    }
+
+    function revealAll() {
+      GROUPS.forEach(group => {
+        if (!solvedGroups.some(g => g.id === group.id)) {
+          solvedGroups.push(group);
+        }
+      });
+      selected.clear();
+      renderSolvedGroups();
+      renderSolvedCount();
+      renderBoard();
+      winBannerEl.classList.remove("show");
+    }
+
+    function resetGame() {
+      selected.clear();
+      solvedGroups = [];
+      mistakesRemaining = MAX_MISTAKES;
+      buildTiles();
+      renderMistakes();
+      renderSolvedCount();
+      renderSolvedGroups();
+      renderBoard();
+      winBannerEl.classList.remove("show");
+      oneAwayBadgeEl.classList.remove("show");
+      setMessage("Select four tiles, then press Submit.");
+    }
+
+    shuffleBtn.addEventListener("click", shuffleBoard);
+    clearBtn.addEventListener("click", clearSelection);
+    submitBtn.addEventListener("click", submitSelection);
+    resetBtn.addEventListener("click", resetGame);
+
+    resetGame();
+  </script>
+</body>
+</html>
